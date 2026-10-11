@@ -1,13 +1,3 @@
-## October 2026 Cyber Defense Investigation
-
-[View the honeypot incident investigation and login-origin workbook](cyber-defense-2026/README.md)
-
-Includes the supplied incident/DFIR draft, 11 KQL queries, a portable Sentinel workbook template, and four relevant screenshots. The working dashboard shows 8 source IPs and 200 login events. The report explicitly identifies both MDE captures as pre-breach.
-
-![VM login-origin dashboard](cyber-defense-2026/screenshots/01-login-origins-workbook.png)
-
----
-
 # Building a SOC + Honeynet in Azure (Live Traffic)
 ![Cloud Honeynet / SOC](https://i.imgur.com/ZWxe03e.jpg)
 

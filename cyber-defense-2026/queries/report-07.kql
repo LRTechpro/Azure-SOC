@@ -1,7 +1,0 @@
-// Extracted from the supplied draft report. Validate schema and scope before use.
-// Exposure: NSG changes that opened all ports
-AzureActivity
-| where TimeGenerated between (datetime(2026-10-06) .. datetime(2026-10-11))
-| where OperationNameValue has "SECURITYRULES" and ActivityStatusValue == "Success"
-| project TimeGenerated, OperationNameValue, Caller, Properties
-| order by TimeGenerated asc

@@ -1,6 +1,0 @@
-// Extracted from the supplied draft report. Validate schema and scope before use.
-// Exfil check: bytes VM -> attacker (aggregated flows; absence is not proof)
-NTANetAnalytics
-| where TimeGenerated between (datetime(2026-10-08T22:00:00Z) .. datetime(2026-10-11T01:00:00Z))
-| where SrcIp in ("64.89.163.94","45.128.199.171","77.90.185.30") or DestIp in ("64.89.163.94","45.128.199.171","77.90.185.30")
-| summarize Flows = count(), BytesToAttacker = sum(BytesDestToSrc), BytesFromAttacker = sum(BytesSrcToDest) by SrcIp, DestPort, FlowStatus
