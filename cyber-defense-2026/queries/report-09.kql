@@ -1,0 +1,14 @@
+// Extracted from the supplied draft report. Validate schema and scope before use.
+// Persistence during the administrator sessions (Oct 9 12:17 AM – 3:30 PM EDT)
+let AdmStart = datetime(2026-10-09T04:17:00Z);
+let AdmEnd   = datetime(2026-10-09T19:30:00Z);
+union
+  (DeviceRegistryEvents | where Timestamp between (AdmStart .. AdmEnd) and DeviceName =~ "corp-nao1-lreed"
+     | where RegistryKey has_any (@"\CurrentVersion\Run", @"\Services\", @"\Winlogon")
+     | project Timestamp, Table = "Registry", Who = InitiatingProcessAccountName, Detail = strcat(RegistryKey, " = ", RegistryValueData)),
+  (DeviceEvents | where Timestamp between (AdmStart .. AdmEnd) and DeviceName =~ "corp-nao1-lreed"
+     | where ActionType in ("UserAccountCreated","UserAccountAddedToLocalGroup","ScheduledTaskCreated","ServiceInstalled")
+     | project Timestamp, Table = "Events", Who = InitiatingProcessAccountName, Detail = strcat(ActionType, " ", tostring(AdditionalFields))),
+  (DeviceProcessEvents | where Timestamp between (AdmStart .. AdmEnd) and DeviceName =~ "corp-nao1-lreed" and AccountName =~ "administrator"
+     | project Timestamp, Table = "Process", Who = AccountName, Detail = ProcessCommandLine)
+| order by Timestamp asc

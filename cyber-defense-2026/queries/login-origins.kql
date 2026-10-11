@@ -1,0 +1,32 @@
+// === Inbound auth origins (geo) ===
+// Goal: plot WHERE remote logons originate, and whether they succeeded.
+DeviceLogonEvents
+| where Timestamp >= ago(10d)
+| where DeviceName =~ "corp-nao1-lreed"
+// Only logons that came over the network from a real external address.
+// RemoteIPType filters out the huge volume of private/internal logons,
+// which would otherwise return empty coordinates and clutter the map.
+| where RemoteIPType == "Public"
+| where isnotempty(RemoteIP)
+// We care about network + remote-interactive (RDP) logons reaching in.
+| where LogonType in ("Network", "RemoteInteractive")
+// Enrich the source IP with geolocation (country/city/lat/long).
+| extend geo = geo_info_from_ip_address(RemoteIP)
+| extend Latitude  = toreal(geo.latitude),
+         Longitude = toreal(geo.longitude),
+         Country   = tostring(geo.country),
+         City      = tostring(geo.city)
+// Drop rows the geo DB couldn't resolve (no coordinates = nothing to plot).
+| where isnotempty(Latitude) and isnotempty(Longitude)
+// Aggregate per source location so the map plots one bubble per origin.
+// Successes vs failures are counted separately to expose the dangerous mix.
+| summarize Attempts        = count(),
+            Successes       = countif(ActionType == "LogonSuccess"),
+            Failures        = countif(ActionType == "LogonFailed"),
+            TargetedDevices = dcount(DeviceName),
+            Accounts        = make_set(AccountName, 25)
+         by RemoteIP, Country, City, Latitude, Longitude
+// Label shown on the bubble: IP + country, plus how many succeeded.
+| extend MapLabel = strcat(RemoteIP, " (", Country, ") — ", Successes, " success / ", Attempts, " total")
+| project Latitude, Longitude, MapLabel, Attempts, Successes, Failures, TargetedDevices, RemoteIP, Country, City, Accounts
+| order by Successes desc, Attempts desc

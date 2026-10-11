@@ -1,0 +1,10 @@
+// Extracted from the supplied draft report. Validate schema and scope before use.
+let IOC_IPs = dynamic(["64.89.163.94","45.128.199.171","64.89.163.176","64.89.163.140","77.90.185.30","77.90.185.21","213.209.159.115","34.76.199.251","183.82.125.9","114.12.35.157","212.237.124.81","54.36.173.55","80.94.95.83"]);
+union withsource=Src
+  (DeviceLogonEvents | where Timestamp > datetime(2026-10-08) and RemoteIP in (IOC_IPs)
+     | project Time = Timestamp, Indicator = RemoteIP, Detail = strcat(ActionType, " ", AccountName)),
+  (DeviceNetworkEvents | where Timestamp > datetime(2026-10-08) and replace_string(RemoteIP, "::ffff:", "") in (IOC_IPs)
+     | project Time = Timestamp, Indicator = RemoteIP, Detail = strcat(ActionType, " :", LocalPort)),
+  (MySQLAudit_CL | where TimeGenerated > datetime(2026-10-08) and RawData has_any ("bc1q","onionmail","DATAID","cuq.in","2no.co","28T2")
+     | project Time = TimeGenerated, Indicator = "ransom-string", Detail = RawData)
+| summarize First = min(Time), Last = max(Time), Hits = count() by Src, Indicator

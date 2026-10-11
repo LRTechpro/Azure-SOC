@@ -1,0 +1,12 @@
+// Extracted from the supplied draft report. Validate schema and scope before use.
+MySQLAudit_CL
+| where TimeGenerated between (datetime(2026-10-08T22:00:00Z) .. datetime(2026-10-11T01:00:00Z))
+| extend EventTime = todatetime(extract(@"^(\S+)", 1, RawData)),
+         ThreadId  = toint(extract(@"^\S+\s+(\d+)", 1, RawData)),
+         Command   = extract(@"^\S+\s+\d+\s+(\w+)", 1, RawData),
+         Argument  = trim(@"\s+", extract(@"^\S+\s+\d+\s+\w+\s*(.*)$", 1, RawData)),
+         SrcIP     = extract(@"@'?(\d{1,3}(?:\.\d{1,3}){3})", 1, RawData)
+| where Command == "Query"
+| where Argument matches regex @"(?i)^(DROP|RESET MASTER|PURGE|REVOKE|SHUTDOWN)\b" or Argument has "RECOVER_YOUR_DATA"
+| project EventTime, ThreadId, Argument
+| order by EventTime asc
